@@ -1,28 +1,46 @@
 ---
 title: "Working with dates in Office Scripts"
 date: "2023-05-27"
-tags: ["date", "convert"]
+tags: ["date", "convert", "csv"]
 ---
 
-Working with dates is a little tricky since dates are numbers in Excel and objects in Javascript.
-Here are some useful functions to convert dates written as numbers, objects or strings.
+Working with dates is a little tricky since dates are numbers in Excel and objects in Javascript.  
+Here are some useful functions to convert dates written as numbers, objects or strings.  
+
+## Convert Excel date numbers to Javascript Date objects
 
 ```ts
-function main(workbook: ExcelScript.Workbook) {}
-
 /**Converts an Excel date number to a JavaScript Date object*/
 function convertDateExcelToJs(excelDate: number) {
   const jsDate = new Date(Math.round((excelDate - 25569) * 86400 * 1000))
   return jsDate
 }
+```
 
+## Convert Javascript Date objects to Excel date numbers
+
+```ts
 /**Converts a JavaScript Date object to an Excel date number*/
 function convertDateJsToExcel(jsDate: Date) {
   const excelDate =
     25569 + (jsDate.getTime() - jsDate.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24)
   return excelDate
 }
+```
 
+## Convert string dates to an Excel date numbers
+
+When you import data from a CSV file, dates are imported as strings.  
+Excel will try to convert the strings to a date in case the worksheet cell number formats are `General`.  
+This can lead to errors (e.g. 01/02/2023 is converted to 02/01/2023).  
+When the cell number format is `Text`, the string is not converted to a date.  
+We can then use this function to convert the string dates to Excel date numbers.  
+
+Notice that the function uses a regular expression to check if the string is: 
+- a valid date
+- in the format dd/mm/yyyy, dd-mm-yyyy or dd.mm.yyyy
+
+```ts
 /**Converts a string date (dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy) to an Excel date number.
  * If the string date does not match the pattern, it is returned without change.
  */
@@ -57,15 +75,32 @@ function convertDateStrToExcel(strDate: string) {
   return excelDate
 }
 
+```
+
+## Convert Javascript dates to strings
+
+```ts
 // converting js dates to a string:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleTimeString
+```
 
+
+## Add days to a Javascript Date object
+
+```ts
 /**Returns a new Date object with a number of days added*/
 function addDaysToJsDate(jsDate: Date, days: number) {
   return new Date(jsDate.getTime() + days * (1000 * 60 * 60 * 24))
 }
 
+```
+
+## Get the next weekday
+
+This is an example of how to use the above functions to get the next weekday.  
+
+```ts
 /**Returns the next day that is not a Saturday or Sunday as an Excel date number.
  * This function uses 3 other functions:
  * - convertDateExcelToJs
