@@ -1,0 +1,58 @@
+---
+title: "Write data to the first free row in a worksheet"
+date: "2023-05-27"
+tags: ["write", "append"]
+---
+
+Adding data to a worksheet is very common.
+Here is an example how to do this and some gotchas to look out for.
+
+## Gotcha 1: there might be no data to write
+
+To write data to a worksheet, we need a 2D array.  
+This array is usually dynamically created and might be empty.  
+To avoid an error, it is a good idea to check that there actually _is_ data to write.
+
+```ts
+// if there is no data, do nothing
+if (!data.length) return
+```
+
+## Gotcha 2: the sheet we write to might be empty
+
+To determine the first free row, we simply count the rows in the used range.  
+The result will be the index of the first free row, because the index is 0-based.  
+We need to be careful, because when our sheet is empty, sh.getUsedRange() would return undefined.  
+Calling .getRowCount() on undefined would throw an error.
+We can avoid this by using optional chaining (.?) and nullish coalescing (??). The index of the first free row is 0 on an empty sheet.
+
+```ts
+// find idx of first free row
+// note that getUsedRange returns undefined when sheet is empty and idx is 0-based
+const firstFreeRowIdx = sh.getUsedRange()?.getRowCount() ?? 0
+```
+
+## A complete example
+
+```ts
+function main(workbook: ExcelScript.Workbook) {
+  const sh = workbook.getFirstWorksheet()
+
+  const data: (string | number)[][] = [
+    ['Alice', 12],
+    ['Bob', 34],
+    ['Carol', 56]
+  ]
+
+  // if there is no data, do nothing
+  if (!data.length) return
+
+  // find idx of first free row
+  // note that getUsedRange returns undefined when sheet is empty and idx is 0-based
+  const firstFreeRowIdx = sh.getUsedRange()?.getRowCount() ?? 0
+
+  const range = sh.getRangeByIndexes(firstFreeRowIdx, 0, data.length, data[0].length)
+
+  range.setValues(data)
+}
+```

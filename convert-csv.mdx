@@ -1,0 +1,64 @@
+---
+title: "Convert CSV to Excel"
+date: "2023-05-27"
+tags: ["csv", "convert", "delimiter"]
+---
+
+Data is often stored in csv files.  
+Via Power Automate, it is very easy to obtain the file content of such files and pass the csv as a string to an Office script.  
+The script below comes from the Microsoft documentation and writes each row separately to a sheet.  
+Notice that the delimiter needs to be changed in 3 different lines.
+
+```ts
+/**
+ * Convert incoming CSV data into a range and add it to the workbook.
+ * @tutorial https://learn.microsoft.com/en-us/office/dev/scripts/resources/samples/convert-csv
+ */
+function main(workbook: ExcelScript.Workbook, csv: string) {
+  let sheet = workbook.getWorksheet('Sheet1')
+
+  // Remove any Windows \r characters.
+  csv = csv.replace(/\r/g, '')
+
+  // Split each line into a row.
+  let rows = csv.split('\n')
+
+  /*
+   * For each row, match the comma-separated sections.
+   * For more information on how to use regular expressions to parse CSV files,
+   * see this Stack Overflow post: https://stackoverflow.com/a/48806378/9227753
+   */
+
+  // CHANGE THE DELIMITER TWICE IN THE NEXT LINE (replace ;)
+  const csvMatchRegex = /(?:;|\n|^)("(?:(?:"")*[^"]*)*"|[^";\n]*|(?:\n|$))/g
+
+  rows.forEach((value, index) => {
+    if (value.length > 0) {
+      let row = value.match(csvMatchRegex)
+
+      // Check for blanks at the start of the row.
+      // CHANGE THE DELIMITER IN THE NEXT LINE (replace ;)
+      if (row[0].charAt(0) === ';') {
+        row.unshift('')
+      }
+
+      // Remove the preceding comma.
+      row.forEach((cell, index) => {
+        // CHANGE THE DELIMITER IN THE NEXT LINE (replace ;)
+        row[index] = cell.indexOf(';') === 0 ? cell.substr(1) : cell
+      })
+
+      // Create a 2D array with one row.
+      let data: string[][] = []
+
+      data.push(row)
+
+      // Put the data in the worksheet.
+      let range = sheet.getRangeByIndexes(index, 0, 1, data[0].length)
+      range.setValues(data)
+    }
+  })
+
+  // Add any formatting or table creation that you want.
+}
+```
