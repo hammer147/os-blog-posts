@@ -1,6 +1,6 @@
 ---
 title: "Working with dates in Office Scripts"
-date: "2023-05-27"
+date: "2023-06-01"
 tags: ["date", "convert", "csv"]
 ---
 
@@ -75,6 +75,42 @@ function convertDateStrToExcel(strDate: string) {
   return excelDate
 }
 
+```
+
+# Convert multiple date columns
+
+Let's say that we converted some CSV files to Excel and kept the dates as text to avoid wrong conversions.  
+We may want to convert all the columns with such dates to real Excel dates, to be able to sort by date for example.
+To do this, we can use the function below:
+
+```ts
+/** Converts multiple columns with text dates to Excel dates.
+ * This function uses the function convertDateStrToExcel.
+ * The text dates should be written like dd/mm/yyyy, dd-mm-yyyy or dd.mm.yyyy
+ * @param colIdxs string, written like a stringified array with the indexes of the columns in usedRange (!) to be converted
+ */
+function main(workbook: ExcelScript.Workbook, colIdxs: string) {
+  colIdxs = '[1,3,5]' // this string could come from Power Automate, e.g. '[1,3,5]' represents cols B, D and F (if usedRange starts in A)
+
+  const colIdxsArr = JSON.parse(colIdxs) as number[]
+  const usedRange = workbook.getFirstWorksheet().getUsedRange()
+
+  if (!usedRange) throw new Error('Worksheet is empty.')
+
+  let dateCol: ExcelScript.Range
+  let strDateValues: string[][]
+  let numDateValues: (string | number)[][] // strings that could not be converted remain strings
+
+  colIdxsArr.forEach(colIdx => {
+    dateCol = usedRange.getColumn(colIdx) // col with strings
+    strDateValues = dateCol.getValues() as string[][]
+    numDateValues = strDateValues.map(r =>
+      r.map(dateStr => convertDateStrToExcel(dateStr.toString()))
+    )
+    dateCol.setValues(numDateValues)
+    dateCol.getEntireColumn().setNumberFormatLocal('dd/mm/jjjj') // when using Power Automate, replace jjjj with yyyy
+  })
+}
 ```
 
 ## Convert Javascript dates to strings
