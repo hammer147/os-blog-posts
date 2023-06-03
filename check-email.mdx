@@ -1,0 +1,40 @@
+---
+title: "Verify if an email address is in a list of emails"
+date: "2023-06-03"
+tags: ["find", "verify", "email"]
+---
+
+An incoming email can trigger a flow in Power Automate.  
+We may want to check if the sender's email address in a list and run actions depending on the result.
+Let's say we have a list of emails in an Excel file like this:
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/excel-emails.PNG" alt="some email addresses in column A of an Excel sheet">
+
+We need a script to verify if an email address is in the list, ignoring case.  
+There is a couple of ways to do this:  
+
+```ts
+function main(workbook: ExcelScript.Workbook, email: string) {
+  email = 'Dave@test.com' // this would come from Power Automate
+
+  let result: boolean
+  const emailRange = workbook.getFirstWorksheet().getUsedRange().getColumn(0)
+
+  // via find()
+  // ----------
+  const found = emailRange.find(email, {
+    completeMatch: true,
+    matchCase: false,
+    searchDirection: ExcelScript.SearchDirection.forward
+  })
+  result = !!found
+
+  // via getValues()
+  // ---------------
+  // const emails = emailRange.getValues().map(row => row[0].toString().toLowerCase())
+  // result = emails.includes(email.toLowerCase())
+
+  console.log(result)
+  return result
+}
+```
