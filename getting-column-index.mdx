@@ -1,0 +1,63 @@
+---
+title: "Getting the index of a column by its name"
+date: "2023-06-24"
+tags: ["column", "index", "table"]
+---
+
+Getting a column in a table or range is a common task.  
+
+## Table
+
+Getting a column in a table is straightforward.  
+ExcelScript has build in functions for this on the [Table interface](https://learn.microsoft.com/en-us/javascript/api/office-scripts/excelscript/excelscript.table?view=office-scripts).
+
+- getColumn()
+- getColumnByName()
+- getColumnById()
+
+## Range
+
+We could consider to convert the range to a table and use the above functions.  
+Something like this: workbook.addTable(myRange, true)
+
+In case we don't want to convert the range to a table, we can use myRange.getColumn(colIdx).
+The problem is that we have to pass the column index, which is not ideal.  
+We can use the following function to get the column index from the column name.
+
+```ts
+/**
+ * Finds a title in a row and returns the column index (0-based) of the first match (or -1 if no match)
+ * @param title The title you are searching
+ * @param sh The worksheet to search in
+ * @param rowIdx Optional. The index of the row (in usedRange) to search in, 0-based. Default is 0.
+ */
+function getColIdxByTitle(title: string, sh: ExcelScript.Worksheet, rowIdx: number = 0): number {
+  const rngTitles = sh.getUsedRange().getRow(rowIdx)
+  const colIdx = rngTitles
+    .find(title, {
+      completeMatch: true /* No match if the cell text only contains the text to find as part of another string. */,
+      matchCase: false,
+      searchDirection:
+        ExcelScript.SearchDirection.forward /* Start at the beginning of the range and go to later columns and rows. */,
+    })
+    ?.getColumnIndex()
+  return colIdx ?? -1
+}
+```
+
+## Worksheet column indexes
+
+In some cases it can be useful to get the column index of a column in the worksheet.  
+The index of column A is 0, B is 1, etc.  
+Here is a function for this:
+  
+  ```ts
+  /** Returns the 0-based index of a column */
+function getColIdx(col: string) {
+  return col.split('').reduce((prev, next) => prev * 26 + parseInt(next, 36) - 9, 0) - 1
+}
+
+console.log(getColIdx('a')) // 0
+console.log(getColIdx('z')) // 25
+console.log(getColIdx('AC')) // 28
+  ```
