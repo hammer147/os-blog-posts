@@ -1,0 +1,46 @@
+---
+title: "Reducing multiple rows to one row"
+date: "2023-06-30"
+tags: ["reduce"]
+---
+
+We can combine multiple rows into one row by using the `reduce` function.  
+This is useful when we have a table with multiple rows for the same item, and we want to combine them into one row based on some criteria.  
+Here is a simple example:
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/excel-reduce-rows.png" alt="Excel table" />
+
+```ts
+function main(workbook: ExcelScript.Workbook) {
+
+    const values = workbook.getFirstWorksheet().getRange('A2:D5').getValues()
+
+    const uniqueNames = new Set<string>()
+    values.forEach(row => uniqueNames.add(row[0] as string))
+
+    const results: (string | number | boolean)[][] = []
+
+    uniqueNames.forEach(name => {
+        const rowsWithCurrentName = values.filter(row => row[0] === name)
+
+        const singleRow = rowsWithCurrentName.reduce((acc, curr, idx) => {
+            // start with the first row
+            if (idx === 0) return curr
+            // if Date1 in acc is more recent than Date1 in curr, then replace it
+            if (Number(acc[1]) > Number(curr[1])) acc[1] = Number(curr[1])
+            // if Date2 in acc is older than Date2 in curr, then replace it
+            if (Number(acc[2]) < Number(curr[2])) acc[2] = Number(curr[2])
+            // always add the current Amount to the acc
+            acc[3] = Number(acc[3]) + Number(curr[3])
+            // return the modified acc, so it becomes the acc for the next iteration
+            return acc
+        }, [])
+
+        results.push(singleRow)
+    })
+
+    if (!(results[0]?.length)) return
+
+    workbook.getFirstWorksheet().getRangeByIndexes(12, 0, results.length, results[0].length).setValues(results)
+}
+```
