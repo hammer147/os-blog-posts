@@ -1,0 +1,46 @@
+---
+title: "Obtain translated dates in Power Automate"
+date: "2023-07-25"
+tags: ["date", "translate", "email", "power automate"]
+---
+
+Imagine a Power Automate flow that sends multiple emails in various languages.
+It would be nice to have the current date available as dynamic content in all the languages we need.  
+
+First we need to get the current time and convert it to our time zone.  
+We can do that with the following 2 actions (both part of the `Date Time Connector`):
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/date-translation-01.PNG" alt="date time connector" />
+
+Notice the format string: `MMMM dd, yyyy` will result in an English date like `July 25, 2023`.  
+
+Now that we have our English date, we can translate it to any other language.  
+The connector we need is [Microsoft Translate V2](https://learn.microsoft.com/en-us/connectors/translatorv2/)
+
+When adding the connector, we will have to fill in 2 fields:
+
+- Connection name: **write whatever you want, e.g. translator**
+- Subscription Key: **leave this blank**
+
+*Continuing without a subscription key will allow us 100 translations per minute and to 55000 characters per day, which is, of course, more than enough for our use case. Just make sure to not have it in a loop.*
+
+We can translate our date to any language we want like this:
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/date-translation-02.PNG" alt="translations" />
+
+We now have access to our dates as dynamic content, so let's test this by sending a teams message to ourselves:
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/date-translation-03.PNG" alt="teams connector" />
+
+And the result should be something like this:
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/date-translation-04.PNG" alt="teams result" />
+
+## Another solution is to obtain the translated dates via a formula in Excel
+
+The above solution is great if we have a single date to translate.  
+However, if we need to translate multiple dates, it is probably better to use a formula in Excel.
+For example, if we have columns `date` and `lang`, we could use a formula like  
+`=DAY([@date])&" "&IFS([@lang]="F";TEXT([@date];"[$-fr-BE]mmmm");[@lang]="E";TEXT([@date];"[$-en-GB]mmmm");TRUE;TEXT([@date];"[$-nl-BE]mmmm"))&" "&YEAR([@date])`
+
+<CustomImage src="https://raw.githubusercontent.com/hammer147/os-blog-posts/main/images/date-translation-05.PNG" alt="excel screenshot" />
